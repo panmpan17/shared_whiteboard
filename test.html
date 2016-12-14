@@ -1,0 +1,163 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Test</title>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	<style>
+		canvas, div#back {
+			position: fixed;
+			top: 5px;
+			left: 5px;
+		}
+
+		div#back {
+			position: static;
+			background-color: white;
+			width: 720px;
+			height: 540px;
+		}
+	</style>
+</head>
+<body style="background-color:#333">
+<div id="back"></div>
+<canvas id="background" width="720" height="540">
+</canvas>
+<canvas id="layer1" width="720" height="540">
+</canvas>
+<canvas id="layer2" width="720" height="540">
+</canvas>
+<canvas id="layer3" width="720" height="540">
+</canvas>
+<canvas id="layer4" width="720" height="540">
+</canvas>
+<canvas id="drawing" width="720" height="540">
+</canvas><br>
+<button onclick="undo()">Undo</button>
+<button onclick="redo()">Redo</button>
+<script>
+var bg = document.getElementById("background"), 
+	ctx_bg = bg.getContext("2d"), 
+	draw = document.getElementById("drawing"), 
+	ctx_draw = draw.getContext("2d");
+
+ctx_draw.strokeStyle = "red";
+ctx_draw.lineWidth = "5";
+
+var layers = [];
+var layer_ctxes = [];
+var layer_contains = [];
+
+var radius = 3;
+var drawing = false;
+var isDrawing = false;
+var lastpoint = [null, null];
+var blank = draw.toDataURL();
+var undolist = [];
+
+let WIDTH = draw.width;
+let HEIGHT = draw.height;
+
+function findalllayer () {
+	var n = 1;
+	while (true) {
+		var layer = document.getElementById("layer" + n);
+		if (layer != undefined) {
+			layers.push(layer);
+			layer_ctxes.push(layer.getContext("2d"));
+			layer_contains.push(layer.toDataURL());
+		}
+		else {
+			break;
+		}
+		n ++;
+	}
+}
+
+function undo () {
+	for (l=(layers.length - 1); l>=0; l--) {
+		if (layer_contains[l] != blank) {
+			undolist.push([layer_contains[l], l]);
+			layer_ctxes[l].clearRect(0, 0, WIDTH, HEIGHT);
+			layer_contains[l] = blank;
+			return;
+		}
+	}
+	alert("不能再返回了")
+}
+
+function redo () {
+	if (undolist.length > 0) {
+		img = new Image();
+		source = undolist.pop();
+		console.log(source)
+		img.src = source[0];
+
+		layer_ctxes[source[1]].drawImage(img, 0, 0);
+		layer_contains[source[1]] = source[0];
+		return;
+	}
+	else {
+		alert("沒有下一步了");
+	}
+}
+
+draw.addEventListener('mousedown', function(event){
+	isDrawing = true;
+	lastpoint = [event.offsetX, event.offsetY];
+})
+
+draw.addEventListener('mousemove', function(event){
+	if (isDrawing) {
+		ctx_draw.beginPath();
+
+		ctx_draw.moveTo(lastpoint[0], lastpoint[1]);
+		ctx_draw.lineTo(event.offsetX, event.offsetY);
+		lastpoint = [event.offsetX, event.offsetY]
+		ctx_draw.stroke();;
+	}
+})
+
+draw.addEventListener('mouseup', function(event){
+	isDrawing = false
+
+	img = new Image();
+	img.src = layers[0].toDataURL();
+
+	ctx_bg.drawImage(img, 0, 0);
+	for (l=0; l<(layers.length - 1); l++) {
+		source = layers[l + 1].toDataURL()
+		if (source != blank) {
+			img.src = source;
+			layer_contains[l] = source;
+
+			layer_ctxes[l].clearRect(0, 0, WIDTH, HEIGHT);
+			layer_ctxes[l].drawImage(img, 0, 0);
+		}
+	}
+
+	source = draw.toDataURL();
+	img.src = source;
+	layer_contains[layer_ctxes.length - 1] = source;
+
+	layer_ctxes[layer_ctxes.length - 1].clearRect(0, 0, WIDTH, HEIGHT);
+	setTimeout(function () {
+		layer_ctxes[layer_ctxes.length - 1].drawImage(img, 0, 0);
+		ctx_draw.clearRect(0, 0, WIDTH, HEIGHT);
+	}, 100)
+
+	if (undolist.length > 0) {
+		undolist.length = 0
+	}
+})
+
+findalllayer();
+</script>
+<script>
+	s = new WebSocket("ws://0.0.0.0:28689/stuff")
+	s.onmessage = function (e) {
+		console.log("Socket message:", e.data);
+	};
+</script>
+</body>
+</html>
