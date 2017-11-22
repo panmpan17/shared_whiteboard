@@ -1,29 +1,206 @@
-import asyncio
-import websockets
+from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
+from bottle import route, run, template
+from _thread import start_new_thread
+from threading import Lock
+from time import sleep
+import sys
+import os
 
-@asyncio.coroutine
-def hello(websocket, path):
-    writer = websocket.writer
+BOARD = "board.text"
+clients = []
 
-    addr = writer.get_extra_info('peername')
-    print("connect with :", addr)
-    while True:
-        name = yield from websocket.recv()
-        print("< {}".format(name))
+GET = "GET"
+POST = "POST"
+PUT = "PUT"
 
-        greeting = "Hello {}!".format(name)
-        yield from websocket.send(greeting)
-        print("> {}".format(greeting))
+UNDO = "UNDO"
+REDO = "REDO"
 
-start_server = websockets.serve(hello, "localhost", 28689)
+class Header:
+    def __init__(self):
+        self.method = None
+        self.args = {}
 
-loop = asyncio.get_event_loop()
-server = loop.run_until_complete(start_server)
+    def __repr__(self):
+        return f"{self.method}\n{self.args}"
 
-try:
-    loop.run_forever()
-except KeyboardInterrupt:
-    pass
+    def __getitem__(self, key):
+        return self.args[key]
 
-server.close()
-loop.close()
+class Board:
+    def __init__(self, layer_num=5):
+        self.bg = []
+        self.layers = []
+        self.undos = []
+        self.layer_num = 5
+
+        for i in range(layer_num):
+            self.layers.append(None)
+
+    def new_stroke(self, stroke):
+        self.layers.append(stroke)
+        last_stroke = self.layers.pop(0)
+        if last_stroke != None:
+            self.bg.append(last_stroke)
+
+    def undo(self):
+        self.layers.insert(0, None)
+        self.undos.append(self.layers.pop())
+
+    def redo(self):
+        self.layers.append(self.undos.pop())
+        return self.layers[-1]
+
+    def layers_string(self):
+        string = ""
+
+        for layer in self.layers:
+            if layer == None:
+                string += "|"
+                continue
+            string += layer + "|"
+
+        return string
+
+    def bg_string(self):
+        string = ""
+
+        for layer in self.bg:
+            if layer == None:
+                string += "|"
+                continue
+            string += layer + "|"
+
+        return string
+
+class SimpleChat(WebSocket):
+    def __init__(self, server, sock, address):
+        super().__init__(server, sock, address)
+
+        self.lock = Lock()
+
+    def parse(self, text):
+        header = Header()
+        args_text = text.split("&")
+
+        for i in args_text:
+            equl = i.find("=")
+            key = i[:equl]
+            value = i[equl + 1:]
+
+            if key == "method":
+                header.method = value
+            else:
+                header.args[key] = value
+
+        return header
+
+    def make_header(self, args):
+        header = []
+
+        for key, value in args.items():
+            header.append(f"{key}={value}")
+
+        return "&".join(header)
+
+    def handleMessage(self):
+        try:
+            header = self.parse(self.data)
+        except:
+            return
+
+        if header.method == GET:
+            args = {
+                "method": GET,
+                "layer_num": board.layer_num,
+                "bg": board.bg_string(),
+                "layers": board.layers_string(),
+            }
+            self.sendMessage(self.make_header(args))
+            return
+
+        elif header.method == POST:
+            board.new_stroke(header["stroke"])
+            board.undos.clear()
+
+            args = {
+                "method": POST,
+                "stroke": header["stroke"]
+            }
+
+            header = self.make_header(args)
+            for client in clients:
+                client.sendMessage(header)
+            return
+
+        elif header.method == PUT:
+            if header.args["action"] == UNDO:
+                if board.layers.count(None) == board.layer_num:
+                    return
+                board.undo()
+
+                args = {
+                    "method": PUT,
+                    "action": UNDO,
+                }
+
+                header = self.make_header(args)
+                for client in clients:
+                    client.sendMessage(header)
+                return
+            elif header.args["action"] == REDO:
+                if len(board.undos) == 0:
+                    return
+                stroke = board.redo()
+
+                args = {
+                    "method": POST,
+                    "stroke": stroke,
+                }
+
+                header = self.make_header(args)
+                for client in clients:
+                    client.sendMessage(header)
+                return
+
+    def handleConnected(self):
+        print(self.address, 'connected')
+        # for client in clients:
+        #     client.sendMessage(self.address[0] + u' - connected')
+        clients.append(self)
+
+    def handleClose(self):
+        clients.remove(self)
+        print(self.address, 'closed')
+        # for client in clients:
+        #     client.sendMessage(self.address[0] + u' - disconnected')
+
+
+with open("index.html") as file:
+    HTML = file.read()
+with open("jquery.min.js") as file:
+    JQUERY = file.read()
+with open("draw.js") as file:
+    DRAW = file.read()
+
+@route("/")
+def index():
+    return HTML
+
+@route("/jquery.min.js")
+def jquery():
+    return JQUERY
+
+@route("/draw.js")
+def draw():
+    return DRAW
+
+if __name__ == "__main__":
+    board = Board()
+    server = SimpleWebSocketServer('0.0.0.0', 8000, SimpleChat)
+    try:
+        start_new_thread(run, (), dict(host='0.0.0.0', port=80))
+        server.serveforever()
+    except KeyboardInterrupt:
+        server.close()
+        sys.exit()

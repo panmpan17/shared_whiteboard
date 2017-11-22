@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Test</title>
+	<script src="jquery.min.js"></script>
+	<style>
+		canvas {
+			position: fixed;
+			/*background-color: white;*/
+			top: 5px;
+			left: 5px;
+		}
+
+		div#back {
+			position: static;
+			background-color: white;
+			width: 720px;
+			height: 540px;
+		}
+	</style>
+</head>
+<body style="background-color:#333">
+	<div id="back"></div>
+	<canvas id="background" width="720" height="540">
+	</canvas>
+	<div id="layers"></div>
+	<canvas id="drawing" width="720" height="540">
+	</canvas>
+	<br>
+	<button onclick="undo()">Undo</button>
+	<button onclick="redo()">Redo</button>
+	<br>
+	<div style="color: white">
+		Brush Size: <span id="brush-size-text">5</span> <input id="brush-size" type="range" value="5" min="2" max="15" step="1">
+	</div>
+	<script src="draw.js"></script>
+</body>
+</html>
