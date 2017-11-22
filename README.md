@@ -1,8 +1,14 @@
-# shared_whiteboard
+# Shred Whiteboard
 
-method=NEW, DELETE,GET(Only for client) <br>
+### Language
+Python(3)
 
-if method = NEW <br>
-	data=\<base64> <br>
-if method = DELTE <br>
-    change=\<int> <br>
+### Requirement
+- [SimpleWebsocketServer](https://github.com/dpallot/simple-websocket-server)
+<br>
+- [Bottle.py](https://bottlepy.org)
+
+### Execute Program
+<code>
+	$ sudo python server.py
+</code>
