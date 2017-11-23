@@ -3,7 +3,8 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Test</title>
-	<script src="jquery.min.js"></script>
+	{% load static %}
+	<script src="{% static "jquery.min.js" %}"></script>
 	<style>
 		canvas {
 			position: fixed;
@@ -34,6 +35,6 @@
 	<div style="color: white">
 		Brush Size: <span id="brush-size-text">5</span> <input id="brush-size" type="range" value="5" min="2" max="15" step="1">
 	</div>
-	<script src="draw.js"></script>
+	<script src="{% static "draw.js" %}"></script>
 </body>
 </html>

@@ -1,6 +1,4 @@
 from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
-from bottle import route, run, template
-from _thread import start_new_thread
 from threading import Lock
 from time import sleep
 import sys
@@ -175,31 +173,10 @@ class SimpleChat(WebSocket):
         # for client in clients:
         #     client.sendMessage(self.address[0] + u' - disconnected')
 
-
-with open("index.html") as file:
-    HTML = file.read()
-with open("jquery.min.js") as file:
-    JQUERY = file.read()
-with open("draw.js") as file:
-    DRAW = file.read()
-
-@route("/")
-def index():
-    return HTML
-
-@route("/jquery.min.js")
-def jquery():
-    return JQUERY
-
-@route("/draw.js")
-def draw():
-    return DRAW
-
 if __name__ == "__main__":
     board = Board()
-    server = SimpleWebSocketServer('0.0.0.0', 8000, SimpleChat)
+    server = SimpleWebSocketServer('0.0.0.0', 21085, SimpleChat)
     try:
-        start_new_thread(run, (), dict(host='0.0.0.0', port=80))
         server.serveforever()
     except KeyboardInterrupt:
         server.close()

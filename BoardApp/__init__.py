@@ -1,0 +1,1 @@
+from BoardApp.views import *
