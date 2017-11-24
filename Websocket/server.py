@@ -1,18 +1,24 @@
 from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
-from threading import Lock
+from threading import Lock, Thread
+from random import randint
 from time import sleep
 import sys
 import os
 
+boards = {}
+clients = {}
 BOARD = "board.text"
-clients = []
 
 GET = "GET"
 POST = "POST"
 PUT = "PUT"
+NEWBOARD = "NEWBOARD"
 
 UNDO = "UNDO"
 REDO = "REDO"
+
+def random_code():
+    return "".join([chr(randint(65, 90)) for _ in range(6)])
 
 class Header:
     def __init__(self):
@@ -24,6 +30,9 @@ class Header:
 
     def __getitem__(self, key):
         return self.args[key]
+
+    def has(self, key):
+        return key in self.args
 
 class Board:
     def __init__(self, layer_num=5):
@@ -72,10 +81,13 @@ class Board:
         return string
 
 class SimpleChat(WebSocket):
-    def __init__(self, server, sock, address):
+    def __init__(self, server, sock, address, boards_limit=4, user_per_board=1):
         super().__init__(server, sock, address)
 
+        self.verifing = {}
         self.lock = Lock()
+        self.boards_limit = boards_limit
+        self.user_per_board = user_per_board
 
     def parse(self, text):
         header = Header()
@@ -106,18 +118,82 @@ class SimpleChat(WebSocket):
             header = self.parse(self.data)
         except:
             return
+        address = "%s:%s" % self.address
 
-        if header.method == GET:
-            args = {
-                "method": GET,
-                "layer_num": board.layer_num,
-                "bg": board.bg_string(),
-                "layers": board.layers_string(),
-            }
-            self.sendMessage(self.make_header(args))
+        # create free white board for system
+        if header.method == NEWBOARD:
+            if len(boards) < self.boards_limit:
+                board_id = random_code()
+                while board_id in boards:
+                    board_id = random_code
+                boards[board_id] = Board()
+                clients[board_id] = []
+
+                args = {
+                    "method": NEWBOARD,
+                    "success": "True",
+                    "board_id": board_id
+                }
+
+                header = self.make_header(args)
+                self.sendMessage(header)
+                return
+            else:
+                args = {
+                    "method": NEWBOARD,
+                    "success": "False",
+                }
+
+                header = self.make_header(args)
+                self.sendMessage(header)
+                return
+
+        # check is user been verifing
+        if address in self.verifing:
+            if header.has("board_id"):
+                board_id = header["board_id"]
+                if board_id in boards:
+                    if len(clients[board_id]) >= self.user_per_board:
+                        args = {
+                            "method": GET,
+                            "success": "False",
+                            "reason": "too many people",
+                        }
+                        self.sendMessage(self.make_header(args))
+                        return
+
+                    self.verifing[address]["verify"] = True
+                    print(address, "passed verify")
+
+                    clients[board_id].append(self.verifing[address]["conn"])
+                    board = boards[board_id]
+
+                    args = {
+                        "method": GET,
+                        "success": "True",
+                        "layer_num": board.layer_num,
+                        "bg": board.bg_string(),
+                        "layers": board.layers_string(),
+                    }
+                    self.sendMessage(self.make_header(args))
             return
 
-        elif header.method == POST:
+        # if header.method == GET:
+        #     args = {
+        #         "method": GET,
+        #                 "success": "True",
+        #         "layer_num": board.layer_num,
+        #         "bg": board.bg_string(),
+        #         "layers": board.layers_string(),
+        #     }
+        #     self.sendMessage(self.make_header(args))
+        #     return
+
+        if header.method == POST:
+            if (not header.has("board_id")) or (not header.has("stroke")):
+                return
+            board_id = header["board_id"]
+            board = boards[board_id]
             board.new_stroke(header["stroke"])
             board.undos.clear()
 
@@ -127,11 +203,16 @@ class SimpleChat(WebSocket):
             }
 
             header = self.make_header(args)
-            for client in clients:
-                client.sendMessage(header)
+            print("send")
+            if board_id in clients:
+                for client in clients[board_id]:
+                    client.sendMessage(header)
             return
 
         elif header.method == PUT:
+            if not header.has("board_id"):
+                return
+            board = boards[header["board_id"]]
             if header.args["action"] == UNDO:
                 if board.layers.count(None) == board.layer_num:
                     return
@@ -162,20 +243,32 @@ class SimpleChat(WebSocket):
                 return
 
     def handleConnected(self):
-        print(self.address, 'connected')
-        # for client in clients:
-        #     client.sendMessage(self.address[0] + u' - connected')
-        clients.append(self)
+        address = "%s:%s" % self.address
+        print(address, 'connected waitng for verify')
+
+        self.verifing[address] = {
+            "conn": self,
+            "verify": False,
+            }
+        t = Thread(target=self.automatic_disconnect, args=(address, ))
+        t.start()
+
+    def automatic_disconnect(self, address):
+        sleep(3)
+        if not self.verifing[address]["verify"]:
+            self.verifing[address]["conn"].close()
+            print(address, "failed verify")
+        self.verifing.pop(address)
 
     def handleClose(self):
-        clients.remove(self)
-        print(self.address, 'closed')
-        # for client in clients:
-        #     client.sendMessage(self.address[0] + u' - disconnected')
+        print("%s:%s" % self.address, "disconnect")
+        try:
+            clients.remove(self)
+        except:
+            pass
 
 if __name__ == "__main__":
-    board = Board()
-    server = SimpleWebSocketServer('0.0.0.0', 21085, SimpleChat)
+    server = SimpleWebSocketServer("localhost", 21085, SimpleChat)
     try:
         server.serveforever()
     except KeyboardInterrupt:

@@ -17,6 +17,8 @@ var drawing = false;
 var isDrawing = false;
 var posting = false;
 var lastpoint = [null, null];
+var layer_limit = 5
+var board_id = null
 
 socket = null
 
@@ -38,11 +40,18 @@ $(document).ready(function () {
 	ctx_bg.strokeStyle = "red";
 	ctx_bg.lineWidth = "5";
 
+	board_id = window.location.pathname.replace("/draw/", "")
+
 	socket.onmessage = function (e) {
 		args = parse(e.data)
 
 		if (args["method"] == GET) {
+			if (args["success"] == "False") {
+				alert(args["reason"])
+				return;
+			}
 			args["layer_num"] = parseInt(args["layer_num"])
+			layer_limit = args["layer_num"]
 			html = ""
 			for (i=0;i<args["layer_num"];i++) {
 				html += format(
@@ -109,7 +118,9 @@ $(document).ready(function () {
 
 			stroke = parse_storke_string(args["stroke"])
 			layer_contains.push(stroke)
+			console.log(layer_contains)
 			layer_contains = layer_contains.slice(1)
+			console.log(layer_contains)
 
 			redraw();
 		}
@@ -124,7 +135,11 @@ $(document).ready(function () {
 	}
 
 	socket.onopen = function () {
-		socket.send("method=GET")
+		args = {
+			"method": GET,
+			"board_id": board_id,
+		}
+		socket.send(make_header(args))
 	}
 
 	socket.onclose = function (e) {
@@ -163,6 +178,7 @@ $(document).ready(function () {
 			"stroke": stroke_2_string(stroke_size,
 				"red",
 				stroke_points),
+			"board_id": board_id,
 		}
 
 		stroke_points = []
@@ -232,15 +248,6 @@ $(document).ready(function () {
 		stroke_size = e.currentTarget.value
 	})
 })
-
-function format() {
-	var s = arguments[0];
-	for (var i = 0; i < arguments.length - 1; i++) {       
-		var reg = new RegExp("\\{" + i + "\\}", "gm");             
-		s = s.replace(reg, arguments[i + 1]);
-	}
-	return s;
-}
 
 function findalllayer () {
 	var n = 1;
@@ -317,30 +324,6 @@ function parse_storke_string (string) {
 		"points": points,
 	}
 	return stroke
-}
-
-function parse (text) {
-	args = {}
-	args_text = text.split("&")
-
-	$.each(args_text, function (_, i) {
-		equl = i.indexOf("=")
-		key = i.substring(0, equl)
-		value = i.substring(equl + 1)
-		args[key] = value
-	})
-
-	return args
-}
-
-function make_header (args) {
-	header = []
-
-	$.each(args, function (key, value) {
-		header.push(format("{0}={1}", key, value))
-	})
-
-	return header.join("&")
 }
 
 function redraw () {

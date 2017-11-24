@@ -21,5 +21,6 @@ from BoardApp import *
 
 urlpatterns = [
     # url(r"^admin/", admin.site.urls),
-    url(r"^", Index),
+    url(r"^draw/([a-zA-Z0-9]{6})", Draw),
+    url(r"^$", Index),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
