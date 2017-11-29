@@ -27,7 +27,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "0.0.0.0",
-    "*"
+    "127.0.0.1",
+    "localhost",
+    "*",
+    "michael628.pythonanywhere.com",
 ]
 
 
@@ -41,6 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "BoardApp",
+    "rest_framework",
 ]
 
 MIDDLEWARE = [
@@ -78,9 +82,17 @@ WSGI_APPLICATION = "shardedwhiteboard.wsgi.application"
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 DATABASES = {
+    # "default": {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'NAME': '1',
+    #     'USER': '2',
+    #     'PASSWORD': '3',
+    #     'HOST': '4',
+    # }
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        # because website been upload to pythonanywhere.com, this prevent it replace db
+        "NAME": os.path.join(BASE_DIR.replace("shared_whiteboard", ""), "shared_whiteboard_data/db.sqlite3"),
     }
 }
 
@@ -128,3 +140,9 @@ STATICFILES_DIRS = [
 
 # Socket server IP address
 SOCKET_IP = "ws://localhost:21085/"
+
+# REST_FRAMEWORK = {
+#     "DEFAULT_PARSER_CLASSES": {
+#         "rest_framework.parsers.JSONParser",
+#     }
+# }

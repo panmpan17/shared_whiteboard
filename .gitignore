@@ -1,2 +1,3 @@
 *.pyc
 BoardApp/encodeing.py
+Websocket/PASSWORD.py

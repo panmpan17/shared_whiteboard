@@ -4,38 +4,78 @@
 	<meta charset="UTF-8">
 	<title>Test</title>
 	{% load static %}
+	<link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
+	<link rel="stylesheet" href="{% static 'draw.css' %}">
+
 	<script src="{% static 'jquery.min.js' %}"></script>
 	<script src="{% static 'base.js' %}"></script>
-	<style>
-		canvas {
-			position: fixed;
-			/*background-color: white;*/
-			top: 5px;
-			left: 5px;
-		}
-
-		div#back {
-			position: static;
-			background-color: white;
-			width: 720px;
-			height: 540px;
-		}
-	</style>
 </head>
-<body style="background-color:#333">
+<body style="background-color: #A8A8A8">
 	<div id="back"></div>
 	<canvas id="background" width="720" height="540">
 	</canvas>
 	<div id="layers"></div>
 	<canvas id="drawing" width="720" height="540">
 	</canvas>
-	<br>
+	<!-- <br>
 	<button onclick="undo()">Undo</button>
 	<button onclick="redo()">Redo</button>
 	<br>
 	<div style="color: white">
 		Brush Size: <span id="brush-size-text">5</span> <input id="brush-size" type="range" value="5" min="2" max="15" step="1">
+	</div> -->
+	<div id="black-pen" class="pen" onclick="changeColor('black')">
+		<div class="cap"></div>
 	</div>
+	<div id="red-pen" class="pen" onclick="changeColor('#FC0D20')">
+		<div class="cap"></div>
+	</div>
+	<div id="orange-pen" class="pen" onclick="changeColor('#F78811')">
+		<div class="cap"></div>
+	</div>
+	<div id="green-pen" class="pen" onclick="changeColor('#0FC13C')">
+		<div class="cap"></div>
+	</div>
+	<div id="blue-pen" class="pen" onclick="changeColor('#0F21EC')">
+		<div class="cap"></div>
+	</div>
+	<!-- <div id="custom-pen" class="pen"></div> -->
+
+	<div id="blackscreen"></div>
+	<div id="alert">
+		<div id="screen-too-small" hidden>
+			<br>
+			<h1>Screen size is too small</h1>
+			<h4>Better bigger than 800 x 600</h4>
+			<h3 onclick="hideSmallScreen()">Got It</h3>
+		</div>
+
+		<div id="connecting-board">
+			<h1>Waiting for Connection ...</h1>
+			<svg width="120" height="120">
+				<circle cx="50" cy="50" r="45" />
+			</svg>
+		</div>
+
+		<div id="bad-connection" hidden>
+			<h1>Bad Connection</h1>
+			<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" width="64px" height="64px" viewBox="0 0 468 468" style="enable-background:new 0 0 467.276 467.276;" xml:space="preserve">
+				<g>
+					<g>
+						<path d="M379.284,51.144C348.258,24.297,309.568,13.46,269.579,8.672C163.069-25.3,68.062,44.959,26.578,142.38    c-44.712,105.002-23.435,222.217,73.516,287.698c98.98,66.846,235.022,39.369,310.942-48.627    C494.021,285.274,473.541,132.719,379.284,51.144z M196.853,432.703c-56.157-7.993-110.636-42.543-139.091-91.805    c-25.438-44.047-25.225-99.203-13.82-147.312c17.527-73.96,70.566-140.71,139.886-156.686c0.104,0.005,0.193,0.035,0.297,0.035    c24.943,0.739,51.291,0.782,77.045,3.567c2.438,0.764,4.875,1.523,7.333,2.42c4.058,1.48,7.611,1.29,10.582,0.071    c27.787,4.677,54.319,13.579,76.957,31.392c50.079,39.405,76.479,110.461,75.032,172.696    C428.353,364.389,307.974,448.516,196.853,432.703z" fill="#006DF0"/>
+						<path d="M169.279,211.913c23.28,0,23.28-36.104,0-36.104C145.999,175.808,145.999,211.913,169.279,211.913z" fill="#006DF0"/>
+						<path d="M293.832,213.715c23.287,0,23.287-36.102,0-36.102C270.555,177.613,270.555,213.715,293.832,213.715z" fill="#006DF0"/>
+						<path d="M134.855,300.254c-17.034,15.935,8.549,41.411,25.532,25.527c43.302-40.497,99.102-44.783,142.351-1.803    c16.524,16.422,42.062-9.1,25.527-25.532C270.92,241.467,192.476,246.372,134.855,300.254z" fill="#006DF0"/>
+					</g>
+				</g>
+			</svg>
+			<h4>Redirect in 3 Seconds</h4>
+		</div>
+	</div>
+
+	<script>
+		socket_ip = "{{ socket_ip }}"
+	</script>
 	<script src="{% static 'draw.js' %}"></script>
 </body>
 </html>

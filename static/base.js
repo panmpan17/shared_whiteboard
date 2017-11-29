@@ -1,3 +1,5 @@
+var host = "http://" + window.location.host + "/api/"
+
 function format() {
 	var s = arguments[0];
 	for (var i = 0; i < arguments.length - 1; i++) {       

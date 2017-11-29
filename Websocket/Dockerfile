@@ -1,5 +1,6 @@
 FROM python:3
-EXPOSE 21085
+EXPOSE 31085
 RUN pip3 install git+https://github.com/dpallot/simple-websocket-server.git
-COPY server.py server.py
-CMD python3 server.py
+RUN pip3 install requests
+COPY . .
+CMD python3 server.py -port 31085 -online True

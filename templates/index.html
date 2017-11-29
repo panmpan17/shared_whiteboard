@@ -2,9 +2,12 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>Share W</title>
+	<title>Shared Whiteboard</title>
 
 	{% load static %}
+	<link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
+	<link rel="apple-touch-icon" href="{% static 'apple-touch-icon.png' %}">
+
 	<script src="{% static 'jquery.min.js' %}"></script>
 	<script src="{% static 'base.js' %}"></script>
 	<script src="{% static 'login.js' %}"></script>
@@ -13,14 +16,20 @@
 <body>
 	<div id="whiteboard"></div>
 	<div id="magnet-blue">
-		<div class="plastic">
-			<div class="text">Publish Works</div>
+		<div class="plastic" onclick="showPublished()">
+			<div class="text">Published Board</div>
 		</div>
 		<div class="line"></div>
 	</div>
 	<div id="magnet-red">
-		<div class="plastic">
-			<div class="text">Information</div>
+		<div class="plastic" onclick="showAbout()">
+			<div class="text">About Website</div>
+		</div>
+		<div class="line"></div>
+	</div>
+	<div id="magnet-green">
+		<div class="plastic" onclick="showContact()">
+			<div class="text">Report Bug &amp; Contact Me</div>
 		</div>
 		<div class="line"></div>
 	</div>
@@ -40,11 +49,9 @@
 			<span id="login-i">i</span>
 			<span id="login-n">n</span>
 		</div>
-		<a onclick="newBoard()">
-			<div id="free">
-				Free Whiteboard
-			</div>
-		</a>
+		<div id="free" onclick="newBoard()">
+			Free Whiteboard
+		</div>
 	</div>
 	<div id="blackscreen" hidden></div>
 	<div id="alert" hidden>
@@ -69,6 +76,44 @@
 			</svg>
 			<h4>Try Again Later ...</h4>
 		</div>
+
+		<div id="bad-connection" hidden>
+			<h1>Bad Connection</h1>
+			<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" width="64px" height="64px" viewBox="0 0 468 468" style="enable-background:new 0 0 467.276 467.276;" xml:space="preserve">
+				<g>
+					<g>
+						<path d="M379.284,51.144C348.258,24.297,309.568,13.46,269.579,8.672C163.069-25.3,68.062,44.959,26.578,142.38    c-44.712,105.002-23.435,222.217,73.516,287.698c98.98,66.846,235.022,39.369,310.942-48.627    C494.021,285.274,473.541,132.719,379.284,51.144z M196.853,432.703c-56.157-7.993-110.636-42.543-139.091-91.805    c-25.438-44.047-25.225-99.203-13.82-147.312c17.527-73.96,70.566-140.71,139.886-156.686c0.104,0.005,0.193,0.035,0.297,0.035    c24.943,0.739,51.291,0.782,77.045,3.567c2.438,0.764,4.875,1.523,7.333,2.42c4.058,1.48,7.611,1.29,10.582,0.071    c27.787,4.677,54.319,13.579,76.957,31.392c50.079,39.405,76.479,110.461,75.032,172.696    C428.353,364.389,307.974,448.516,196.853,432.703z" fill="#006DF0"/>
+						<path d="M169.279,211.913c23.28,0,23.28-36.104,0-36.104C145.999,175.808,145.999,211.913,169.279,211.913z" fill="#006DF0"/>
+						<path d="M293.832,213.715c23.287,0,23.287-36.102,0-36.102C270.555,177.613,270.555,213.715,293.832,213.715z" fill="#006DF0"/>
+						<path d="M134.855,300.254c-17.034,15.935,8.549,41.411,25.532,25.527c43.302-40.497,99.102-44.783,142.351-1.803    c16.524,16.422,42.062-9.1,25.527-25.532C270.92,241.467,192.476,246.372,134.855,300.254z" fill="#006DF0"/>
+					</g>
+				</g>
+			</svg>
+			<h4>Try Again Later ...</h4>
+		</div>
+
+		<div id="thanks" hidden>
+			<h1>Thanks for Your Reply</h1>
+		</div>
 	</div>
+	<div id="page" hidden>
+		<span id="close" onclick="hidePage()">X</span>
+		<div id="contact-report" hidden>
+			<h1>Contect Me &amp; Report Bug</h1>
+			<input id="nickname" type="text" placeholder="Nickname"><br><br>
+			<input id="email" type="text" placeholder="Email"><br><br>
+			<textarea id="content" placeholder="Bug Description or Anything" cols="30" rows="10"></textarea><br><br>
+			<span id="submit" onclick="submitContact()">Submit</span>
+		</div>
+		<div id="aboute-website" hidden>
+			<h1>Shared Whiteboard</h1>
+			<h2>Comming Soon ....</h2>
+			<h5>maybe</h5>
+		</div>
+		<div id="published-board"></div>
+	</div>
+	<script>
+		socket_ip = "{{ socket_ip }}"
+	</script>
 </body>
 </html>

@@ -2,11 +2,25 @@ from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
 from threading import Lock, Thread
 from random import randint
 from time import sleep
+import requests
+import logging
+import argparse
 import sys
 import os
 
+# load restful api auth username and password
+# file 'PASSWORD.py' wil not show in github
+from PASSWORD import USERNAME, PASSWORD
+AUTH = requests.auth.HTTPBasicAuth(USERNAME, PASSWORD)
+ONLINE_RESTAPI_URL = "http://michael628.pythonanywhere.com/api/"
+OFFLINE_RESTAPI_URL = "http://localhost:8000/api/"
+
+restapi_url = None
+
+runing = True
 boards = {}
 clients = {}
+address_2_board = {}
 BOARD = "board.text"
 
 GET = "GET"
@@ -81,7 +95,7 @@ class Board:
         return string
 
 class SimpleChat(WebSocket):
-    def __init__(self, server, sock, address, boards_limit=4, user_per_board=1):
+    def __init__(self, server, sock, address, boards_limit=4, user_per_board=3):
         super().__init__(server, sock, address)
 
         self.verifing = {}
@@ -163,9 +177,10 @@ class SimpleChat(WebSocket):
                         return
 
                     self.verifing[address]["verify"] = True
-                    print(address, "passed verify")
+                    logging.warning(address + " passed verify")
 
                     clients[board_id].append(self.verifing[address]["conn"])
+                    address_2_board[address] = board_id
                     board = boards[board_id]
 
                     args = {
@@ -203,7 +218,6 @@ class SimpleChat(WebSocket):
             }
 
             header = self.make_header(args)
-            print("send")
             if board_id in clients:
                 for client in clients[board_id]:
                     client.sendMessage(header)
@@ -244,7 +258,7 @@ class SimpleChat(WebSocket):
 
     def handleConnected(self):
         address = "%s:%s" % self.address
-        print(address, 'connected waitng for verify')
+        logging.warning(address + ' connected waitng for verify')
 
         self.verifing[address] = {
             "conn": self,
@@ -257,20 +271,63 @@ class SimpleChat(WebSocket):
         sleep(3)
         if not self.verifing[address]["verify"]:
             self.verifing[address]["conn"].close()
-            print(address, "failed verify")
+            logging.warning(address + " failed verify")
         self.verifing.pop(address)
 
     def handleClose(self):
-        print("%s:%s" % self.address, "disconnect")
-        try:
-            clients.remove(self)
-        except:
-            pass
+        address = "%s:%s" % self.address
+        logging.warning(address + " disconnect")
+
+        if address in address_2_board:
+            for conn in clients[address_2_board[address]]:
+                conn_address = "%s:%s" % conn.address
+                if address == conn_address:
+                    clients[address_2_board[address]].remove(conn)
+                    break
+            address_2_board.pop(address)
+
+def delete_emptyroom():
+    while runing:
+        sleep(120)
+        remove_board = []
+        for board_id, client in clients.items():
+            if len(client) == 0:
+                remove_board.append(board_id)
+        for board_id in remove_board:
+            board = boards.pop(board_id)
+            clients.pop(board_id)
+
+            r = requests.post(restapi_url + "board/", auth=AUTH, json={
+                "layers": board.layers_string(),
+                "background": board.bg_string(),
+                })
+
+            logging.warning(f"Board {board_id} has been removed")
 
 if __name__ == "__main__":
-    server = SimpleWebSocketServer("localhost", 21085, SimpleChat)
+    logging.warning("Starting server ....")
+    parser = argparse.ArgumentParser(description='Start up Socket Server')
+    parser.add_argument('-port', type=int, default=21085, required=False)
+    parser.add_argument('-online', type=bool, default=False, required=False)
+    args = parser.parse_args()
+
+    port = args.port
+    if args.port > 65000:
+        port = 21085
+
+    if args.online:
+        restapi_url = ONLINE_RESTAPI_URL
+    else:
+        restapi_url = OFFLINE_RESTAPI_URL
+    logging.warning("Rstful Api url: " + restapi_url)
+
+    server = SimpleWebSocketServer("0.0.0.0", port, SimpleChat)
+    logging.warning("Port: " + str(port))
     try:
+        t = Thread(target=delete_emptyroom)
+        t.start()
         server.serveforever()
     except KeyboardInterrupt:
+        runing = False
         server.close()
         sys.exit()

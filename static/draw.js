@@ -12,6 +12,7 @@ var layer_contains = [];
 var stroke_points = [];
 
 var stroke_size = 5
+var stroke_color = "black"
 var radius = 3;
 var drawing = false;
 var isDrawing = false;
@@ -24,7 +25,7 @@ socket = null
 
 $(document).ready(function () {
 	try {
-		socket = new WebSocket("ws://" + window.location.hostname + ":21085")
+		socket = new WebSocket(socket_ip)
 	} catch (e) {
 		alert("Cannot connect to server, please try again later.")
 	}
@@ -37,10 +38,14 @@ $(document).ready(function () {
 	WIDTH = draw.width;
 	HEIGHT = draw.height;
 
-	ctx_bg.strokeStyle = "red";
+	ctx_bg.strokeStyle = stroke_color;
 	ctx_bg.lineWidth = "5";
 
 	board_id = window.location.pathname.replace("/draw/", "")
+
+	if (($(document).width() <= 800) || ($(document).height() <= 600)) {
+		showSmallScreen()
+	}
 
 	socket.onmessage = function (e) {
 		args = parse(e.data)
@@ -94,6 +99,10 @@ $(document).ready(function () {
 				}
 				ctx_bg.stroke();
 			})
+
+			$("#blackscreen").hide()
+			$("#alert").hide()
+			$("#connecting-board").hide()
 		}
 		else if (args["method"] == "POST") {
 			posting = false;
@@ -143,26 +152,32 @@ $(document).ready(function () {
 	}
 
 	socket.onclose = function (e) {
-		alert("Cannot connect to server, please try again later.")
+		$("#blackscreen").show()
+		$("#alert").show()
+		$("#bad-connection").show()
+
+		setTimeout(function () {
+			window.location.pathname = "/";
+		}, 3000)
 	};
 
 	draw.addEventListener('mousedown', function(event) {
 		if (!posting) {
 			isDrawing = true;
-			lastpoint = [event.offsetX, event.offsetY];
+			lastpoint = [event.offsetX - 20, event.offsetY - 20];
 			stroke_points.push(lastpoint)
 		}
 	})
 
 	draw.addEventListener('mousemove', function(event) {
 		if (isDrawing) {
-			ctx_draw.strokeStyle = "red";
+			ctx_draw.strokeStyle = stroke_color;
 			ctx_draw.lineWidth = String(stroke_size);
 			ctx_draw.beginPath();
 
 			ctx_draw.moveTo(lastpoint[0], lastpoint[1]);
-			ctx_draw.lineTo(event.offsetX, event.offsetY);
-			lastpoint = [event.offsetX, event.offsetY]
+			ctx_draw.lineTo(event.offsetX - 20, event.offsetY - 20);
+			lastpoint = [event.offsetX - 20, event.offsetY - 20]
 			stroke_points.push(lastpoint)
 			ctx_draw.stroke();;
 		}
@@ -176,7 +191,7 @@ $(document).ready(function () {
 		args = {
 			"method": "POST",
 			"stroke": stroke_2_string(stroke_size,
-				"red",
+				stroke_color,
 				stroke_points),
 			"board_id": board_id,
 		}
@@ -190,21 +205,21 @@ $(document).ready(function () {
 		if (!posting) {
 			isDrawing = true;
 			touch = event.touches[0];
-			lastpoint = [touch.clientX, touch.clientY];
+			lastpoint = [touch.clientX - 40, touch.clientY - 20];
 			stroke_points.push(lastpoint)
 		}
 	})
 
 	draw.addEventListener('touchmove', function(event) {
 		if (isDrawing) {
-			ctx_draw.strokeStyle = "red";
+			ctx_draw.strokeStyle = stroke_color;
 			ctx_draw.lineWidth = String(stroke_size);
 			ctx_draw.beginPath();
 
 			ctx_draw.moveTo(lastpoint[0], lastpoint[1]);
 			touch = event.touches[0];
-			ctx_draw.lineTo(touch.clientX, touch.clientY);
-			lastpoint = [touch.clientX, touch.clientY]
+			ctx_draw.lineTo(touch.clientX - 60, touch.clientY - 20);
+			lastpoint = [touch.clientX - 60, touch.clientY - 20];
 			stroke_points.push(lastpoint)
 			ctx_draw.stroke();;
 		}
@@ -218,8 +233,9 @@ $(document).ready(function () {
 		args = {
 			"method": "POST",
 			"stroke": stroke_2_string(stroke_size,
-				"red",
+				stroke_color,
 				stroke_points),
+			"board_id": board_id,
 		}
 
 		stroke_points = []
@@ -257,8 +273,8 @@ function findalllayer () {
 			layers.push(layer);
 
 			var ctx = layer.getContext("2d")
-			ctx.strokeStyle = "red";
-			ctx.lineWidth = "5";
+			// ctx.strokeStyle = "red";
+			// ctx.lineWidth = "5";
 			layer_ctxes.push(ctx);
 		}
 		else {
@@ -305,7 +321,7 @@ function parse_storke_string (string) {
 	info.pop()
 
 	size = 5
-	color = "red"
+	color = "black"
 	points = []
 	$.each(info, function (_, i) {
 		if (_ == 0) {
@@ -346,4 +362,20 @@ function redraw () {
 		}
 		layer_ctxes[i].stroke();
 	})
+}
+
+function showSmallScreen () {
+	$("#blackscreen").show()
+	$("#alert").show()
+	$("#screen-too-small").show()
+}
+
+function hideSmallScreen () {
+	$("#blackscreen").hide()
+	$("#alert").hide()
+	$("#screen-too-small").hide()
+}
+
+function changeColor (color) {
+	stroke_color = color;
 }

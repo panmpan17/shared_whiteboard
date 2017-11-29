@@ -1,0 +1,92 @@
+{% extends "admin/change_form.html" %}
+{% block after_field_sets %}
+	<div onclick="updatebase64()" style="background: #0FC13C; width: 300px;height: 40px;line-height: 40px">Update base64</div>
+	<canvas id="display" width="720" height="540"></canvas>
+	{% load static %}
+	<script src="{% static 'jquery.min.js' %}"></script>
+	<script>
+		function parse_storke_string (string) {
+			info = string.split(";")
+			info.pop()
+
+			size = 5
+			color = "black"
+			points = []
+			$.each(info, function (_, i) {
+				if (_ == 0) {
+					ele = i.split(",")
+					size = ele[0]
+					color = ele[1]
+					return true;
+				}
+				pos = i.split(",")
+				points.push([parseInt(pos[0]), parseInt(pos[1])])
+			})
+
+			stroke = {
+				"size": size,
+				"color": color,
+				"points": points,
+			}
+			return stroke
+		}
+
+		function updatebase64 () {
+			$("#id_base64")[0].value = canvas.toDataURL()
+		}
+
+		$(document).ready(function () {
+			canvas = $("#display")[0]
+			ctx = canvas.getContext("2d")
+
+			layers = $("#id_layers")[0].value
+			background = $("#id_background")[0].value
+
+			background = background.split("|")
+			background.pop()
+			$.each(background, function (_, i) {
+				stroke = parse_storke_string(i)
+
+				ctx.strokeStyle = stroke["color"];
+				ctx.lineWidth = stroke["size"];
+
+				if (stroke["points"].length == 0) {
+					return true;
+				}
+
+				ctx.beginPath();
+				ctx.moveTo(stroke["points"][0][0], stroke["points"][0][1]);
+
+				for (e=1;e<stroke["points"].length;e++) {
+					ctx.lineTo(stroke["points"][e][0], stroke["points"][e][1]);
+				}
+				ctx.stroke();
+			})
+
+
+			layers = layers.split("|")
+			layers.pop()
+			$.each(layers, function (_, i) {
+				if (i == "") {
+					return true;
+				}
+				stroke = parse_storke_string(i)
+
+				ctx.strokeStyle = stroke["color"];
+				ctx.lineWidth = stroke["size"];
+
+				if (stroke["points"].length == 0) {
+					return true;
+				}
+
+				ctx.beginPath();
+				ctx.moveTo(stroke["points"][0][0], stroke["points"][0][1]);
+
+				for (e=1;e<stroke["points"].length;e++) {
+					ctx.lineTo(stroke["points"][e][0], stroke["points"][e][1]);
+				}
+				ctx.stroke();
+			})
+		})
+	</script>
+{% endblock %}
