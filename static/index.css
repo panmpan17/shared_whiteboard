@@ -98,6 +98,10 @@ span#close:hover {
 	color: #EA5759;
 }
 
+div#login-user {
+	padding-top: 100px;
+}
+
 input,
 textarea {
 	width: 200px;

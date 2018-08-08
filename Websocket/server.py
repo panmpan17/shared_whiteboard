@@ -2,18 +2,23 @@ from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
 from threading import Lock, Thread
 from random import randint
 from time import sleep
+
+import json
 import requests
 import logging
+
 import argparse
 import sys
 import os
 
 # load restful api auth username and password
-# file 'PASSWORD.py' wil not show in github
+# file "PASSWORD.py" will be ignore by github
 from PASSWORD import USERNAME, PASSWORD
 AUTH = requests.auth.HTTPBasicAuth(USERNAME, PASSWORD)
 ONLINE_RESTAPI_URL = "http://michael628.pythonanywhere.com/api/"
 OFFLINE_RESTAPI_URL = "http://localhost:8000/api/"
+
+from encode import varify_code
 
 restapi_url = None
 
@@ -27,9 +32,19 @@ GET = "GET"
 POST = "POST"
 PUT = "PUT"
 NEWBOARD = "NEWBOARD"
+CREATEPREMIUMBOARD = "CREATEPREMIUMBOARD"
 
 UNDO = "UNDO"
 REDO = "REDO"
+
+def encode(key, string):
+    encoded_chars = []
+    for i, c in enumerate(string):
+        key_c = key[i % len(key)]
+        encoded_c = chr(ord(c) + ord(key_c) % 256)
+        encoded_chars.append(encoded_c)
+    encoded_string = "".join(encoded_chars)
+    return base64.urlsafe_b64encode(encoded_string.encode())
 
 def random_code():
     return "".join([chr(randint(65, 90)) for _ in range(6)])
@@ -161,6 +176,19 @@ class SimpleChat(WebSocket):
                 header = self.make_header(args)
                 self.sendMessage(header)
                 return
+
+        elif header.method == CREATEPREMIUMBOARD:
+            code = header.args["code"]
+            if varify_code(code):
+                self.sendMessage("A")
+                return
+
+            args = {
+                "success": "False",
+                "reason": "wrong code",
+            }
+            self.sendMessage(self.make_header(args))
+            return
 
         # check is user been verifing
         if address in self.verifing:

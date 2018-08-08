@@ -15,6 +15,7 @@ urlpatterns = [
     url(r"^$", Index),
     url(r"^admin/", admin.site.urls),
     url(r"^draw/([a-zA-Z0-9]{6})", Draw),
+    url(r"^newboard/", NewBoard),
     url(r"^api/", include(router.urls)),
     # url(r"^api-auth/", include('rest_framework.urls', namespace='rest_framework')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

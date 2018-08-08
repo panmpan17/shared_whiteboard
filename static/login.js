@@ -136,3 +136,29 @@ function submitContact () {
 		}
 	})
 }
+
+function login () {
+	username = $("#username")[0].value
+	password = $("#password")[0].value
+
+	if ((username == "") || (password == "")) {
+		alert("Please don't leave blank");
+		return;
+	}
+
+	$.ajax({
+		url: host + "newboard/",
+		data: {
+			"username": username,
+			"password": password,
+		},
+		success: function (msg) {
+			if (msg["success"]) {
+				console.log("success")
+			}
+			else {
+				alert("Please try again")
+			}
+		}
+	})
+}

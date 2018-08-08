@@ -95,6 +95,10 @@ div.pen#blue-pen {top: 300px;}
 
 div.pen#blue-pen .cap {background: #0F21EC;}
 
+div.pen#white-pen {top: 370px;}
+
+div.pen#white-pen .cap {background: #FFF;}
+
 svg {
 	display: inline-block;
 }

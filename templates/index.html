@@ -53,7 +53,7 @@
 			Free Whiteboard
 		</div>
 	</div>
-	<div id="blackscreen" hidden></div>
+	<div id="blackscreen"></div>
 	<div id="alert" hidden>
 		<div id="createing-board" hidden>
 			<h1>Creating Board ...</h1>
@@ -96,7 +96,7 @@
 			<h1>Thanks for Your Reply</h1>
 		</div>
 	</div>
-	<div id="page" hidden>
+	<div id="page">
 		<span id="close" onclick="hidePage()">X</span>
 		<div id="contact-report" hidden>
 			<h1>Contect Me &amp; Report Bug</h1>
@@ -105,12 +105,23 @@
 			<textarea id="content" placeholder="Bug Description or Anything" cols="30" rows="10"></textarea><br><br>
 			<span id="submit" onclick="submitContact()">Submit</span>
 		</div>
+
 		<div id="aboute-website" hidden>
 			<h1>Shared Whiteboard</h1>
 			<h2>Comming Soon ....</h2>
 			<h5>maybe</h5>
 		</div>
-		<div id="published-board"></div>
+
+		<div id="published-board" hidden></div>
+
+		<div id="login-user">
+			<h1>Login</h1>
+			<input id="username" type="text" placeholder="Username">
+			<input id="password" type="password" placeholder="Password">
+			<br><br>
+			<span id="submit" onclick="login()">Login</span><br><br>
+			<h3 style="color:cornflowerblue;cursor:pointer;">How to have a User Account?</h3>
+		</div>
 	</div>
 	<script>
 		socket_ip = "{{ socket_ip }}"
